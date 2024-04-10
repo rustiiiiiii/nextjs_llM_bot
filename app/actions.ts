@@ -1,8 +1,8 @@
 'use server'
 
+import { kv } from '@vercel/kv'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { kv } from '@vercel/kv'
 
 import { auth } from '@/auth'
 import { type Chat } from '@/lib/types'
@@ -149,8 +149,6 @@ export async function refreshHistory(path: string) {
 }
 
 export async function getMissingKeys() {
-  const keysRequired = ['OPENAI_API_KEY']
+  const keysRequired = []
   return keysRequired
-    .map(key => (process.env[key] ? '' : key))
-    .filter(key => key !== '')
 }

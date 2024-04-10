@@ -5,8 +5,6 @@ import Textarea from 'react-textarea-autosize'
 
 import { useActions, useUIState } from 'ai/rsc'
 
-import { UserMessage } from './stocks/message'
-import { type AI } from '@/lib/chat/actions'
 import { Button } from '@/components/ui/button'
 import { IconArrowElbow, IconPlus } from '@/components/ui/icons'
 import {
@@ -14,9 +12,12 @@ import {
   TooltipContent,
   TooltipTrigger
 } from '@/components/ui/tooltip'
+import { type AI } from '@/lib/chat/actions'
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit'
+import axios from 'axios'
 import { nanoid } from 'nanoid'
 import { useRouter } from 'next/navigation'
+import { BotMessage, SpinnerMessage, UserMessage } from './stocks/message'
 
 export function PromptForm({
   input,
@@ -29,7 +30,7 @@ export function PromptForm({
   const { formRef, onKeyDown } = useEnterSubmit()
   const inputRef = React.useRef<HTMLTextAreaElement>(null)
   const { submitUserMessage } = useActions()
-  const [_, setMessages] = useUIState<typeof AI>()
+  const [messages, setMessages] = useUIState<typeof AI>()
 
   React.useEffect(() => {
     if (inputRef.current) {
@@ -61,9 +62,47 @@ export function PromptForm({
           }
         ])
 
-        // Submit and get response message
-        const responseMessage = await submitUserMessage(value)
-        setMessages(currentMessages => [...currentMessages, responseMessage])
+        // initially have <SpinnerMessage /> and then replace with responseMessage
+        const spinnerMessage = {
+          id: nanoid(),
+          display: <SpinnerMessage />
+        }
+
+        setMessages(currentMessages => [...currentMessages, spinnerMessage])
+
+        let data = JSON.stringify({
+          user_input: value,
+          prompt_template: 'Talking to your co-worker',
+          input_method: 'Text',
+          output_method: 'Text',
+          conversation_id: '12345678-1234-5678-1234-567812345678'
+        })
+
+        let config = {
+          method: 'post',
+          maxBodyLength: Infinity,
+          url: 'https://450a-103-25-231-126.ngrok-free.app/process',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          data: data
+        }
+
+        try {
+          const response = await axios.request(config)
+          const responseMessage = {
+            id: nanoid(),
+            display: <BotMessage content={response.data} />
+          }
+          setMessages(currentMessages => [
+            ...currentMessages.filter(
+              message => message.id !== spinnerMessage.id
+            ),
+            responseMessage
+          ])
+        } catch (error) {
+          console.log(error)
+        }
       }}
     >
       <div className="relative flex max-h-60 w-full grow flex-col overflow-hidden bg-background px-8 sm:rounded-md sm:border sm:px-12">
