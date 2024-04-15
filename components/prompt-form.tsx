@@ -81,7 +81,7 @@ export function PromptForm({
         let config = {
           method: 'post',
           maxBodyLength: Infinity,
-          url: 'https://450a-103-25-231-126.ngrok-free.app/process',
+          url: 'http://localhost:8000/process',
           headers: {
             'Content-Type': 'application/json'
           },
